@@ -487,12 +487,14 @@ Pull requests are also very welcome. Please create a topic branch for your propo
 
 Maintainers:
 
-- [Bert Van Vreckem](https://github.com/bertvv/)
-- [Gregory Shulov](https://github.com/GR360RY)
-- [Stuart Knight](https://github.com/blofeldthefish)
+- [Maryam Mayabi](https://github.com/mmayabi)
+- [Azade Amini](https://github.com/azadeamini)
 
 Contributors:
 
+- [Bert Van Vreckem](https://github.com/bertvv/)
+- [Gregory Shulov](https://github.com/GR360RY)
+- [Stuart Knight](https://github.com/blofeldthefish)
 - [Aido](https://github.com/aido)
 - [Angel Barrera](https://github.com/angelbarrera92)
 - [B. Verschueren](https://github.com/bverschueren)
