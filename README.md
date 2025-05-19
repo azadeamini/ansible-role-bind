@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/bertvv/ansible-role-bind/workflows/CI/badge.svg)](https://github.com/bertvv/ansible-role-bind/actions)
+[![Actions Status](https://github.com/azadeamini/ansible-role-bind/workflows/CI/badge.svg)](https://github.com/azadeamini/ansible-role-bind/actions)
 
 An Ansible role for setting up ISC BIND as an **authoritative-only** DNS server for multiple domains. Specifically, the responsibilities of this role are to:
 
@@ -8,7 +8,7 @@ An Ansible role for setting up ISC BIND as an **authoritative-only** DNS server 
 
 This role supports multiple forward and reverse zones, including for IPv6. Although enabling recursion is supported (albeit *strongly* discouraged), consider using another role if you want to set up a caching or forwarding name server.
 
-If you like/use this role, please consider giving it a star and rating it on the role's [Ansible Galaxy page](https://galaxy.ansible.com/bertvv/bind). Thanks!
+If you like/use this role, please consider giving it a star and rating it on the role's [Ansible Galaxy page](https://galaxy.ansible.com/azadeamini/bind). Thanks!
 
 See the [change log](CHANGELOG.md) for notable changes between versions.
 
@@ -407,7 +407,7 @@ molecule/shared_inventory
 
 ## Testing
 
-This role is tested using [Ansible Molecule](https://molecule.readthedocs.io/). Tests are launched automatically on [Github Actions](https://github.com/bertvv/ansible-role-bind/actions) after each commit and PR.
+This role is tested using [Ansible Molecule](https://molecule.readthedocs.io/). Tests are launched automatically on [Github Actions](https://github.com/azadeamini/ansible-role-bind/actions) after each commit and PR.
 
 This Molecule configuration will:
 
@@ -462,7 +462,7 @@ Workaround:
 1. Run molecule linter: `molecule lint`
 2. Provision containers: `molecule converge`
 3. Connect to container: `molecule login --host ns1`
-4. Go to role directory: `cd /etc/ansible/roles/bertvv.bind`
+4. Go to role directory: `cd /etc/ansible/roles/azadeamini.bind`
 5. Run verify playbook:
 
   ```console
