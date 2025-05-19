@@ -1,9 +1,3 @@
-//
-// named.conf
-//
-{{ ansible_managed | comment('c') }}
-//
-{% if not bind_acls_view %}
 {% for acl in bind_acls %}
 acl "{{ acl.name }}" {
 {% for match in acl.match_list %}
@@ -12,104 +6,42 @@ acl "{{ acl.name }}" {
 };
 
 {% endfor %}
-{% endif %}
-options {
-{% for port in bind_listen_ipv4_port %}
-  listen-on port {{ port }} { {{ bind_listen_ipv4|join('; ') }}; };
-{% endfor %}
-{% for port in bind_listen_ipv6_port %}
-  listen-on-v6 port {{ port }} { {{ bind_listen_ipv6|join('; ') }}; };
-{% endfor %}
-  directory   "{{ bind_dir }}";
-  dump-file   "{{ bind_dir }}/data/cache_dump.db";
-  statistics-file "{{ bind_dir }}/data/named_stats.txt";
-  memstatistics-file "{{ bind_dir }}/data/named_mem_stats.txt";
-  allow-query     { {{ bind_allow_query|join('; ') }}; };
-{% if slave_ip is defined %} 
-  allow-transfer  { "{{ slave_ip }}"; };
-  also-notify { "{{ slave_ip }}"; };
-{% else %}
-  allow-transfer  {% if bind_acls|length != 0 %} { {% for acl in bind_acls %}"{{ acl.name }}"; {% endfor %}}; {% else %} { none; }; {% endif %}
-{% endif %}
-{% if bind_check_names is defined %}
-  check-names  {{ bind_check_names }};
-{% endif %}
 
-  recursion {% if bind_recursion %}yes{% else %}no{% endif %};
-  {% if bind_recursion %}allow-recursion { {{ bind_allow_recursion|join('; ') }}; };
-  {% endif %}
-{% if bind_forwarders|length > 0 %}forwarders { {{ bind_forwarders|join('; ') }}; };{% endif %}
-  {% if bind_forward_only %}forward only;{% endif %}
-
-  rrset-order { order {{ bind_rrset_order }}; };
-
-{% if bind_dnssec_enable %}  dnssec-enable {{ bind_dnssec_enable }};{% endif %}
-{% if  bind_dnssec_validation %}  dnssec-validation {{ bind_dnssec_validation }};{% endif %}
-
-  /* Path to ISC DLV key */
-  bindkeys-file "{{ bind_bindkeys_file }}";
-
-  managed-keys-directory "{{ bind_dir }}/dynamic";
-
-  pid-file "{{ bind_pid_file }}";
-  session-keyfile "{{ bind_session_keyfile }}";
-{% if bind_query_log is defined %}
-
-  querylog yes;
-{% endif %}
-{% if bind_dns64 %}
-  dns64 64:ff9b::/96 {
-    clients { {{ bind_dns64_clients|join('; ') }};  };
-  };
-{% endif %}
-};
-
-{% if bind_statistics_channels %}
-statistics-channels {
-  inet {{ bind_statistics_host }} port {{ bind_statistics_port }} allow { {{ bind_statistics_allow|join('; ') }}; };
-};
-{% endif %}
-
-logging {
-  channel default_debug {
-    file "{{ bind_log }}";
-    severity dynamic;
-    print-time yes;
-  };
-{% if bind_query_log is defined %}
-  channel querylog {
-{% if bind_query_log.file is defined %}
-    file "{{ bind_query_log.file }}" versions {{ bind_query_log.versions }} size {{ bind_query_log.size }};
-{% else %}
-    file "{{ bind_query_log }}";
-{% endif %}
-    severity dynamic;
-    print-time yes;
-  };
-  category queries { querylog; };
-{% endif %}
-{% if bind_other_logs is defined %}
-
-{% for log in bind_other_logs %}
-  channel {{ log.name }} {
-    file "{{ log.file }}" versions {{ log.versions }} size {{ log.size }};
-    severity dynamic;
-    print-time yes;
-  };
-  category "{{ log.name }}" { "{{ log.name }}"; };
-{% endfor %}
-{% endif %}
-};
-
-{% for file in bind_default_zone_files %}
-include "{{ file }}";
-{% endfor %}
-{% for file in bind_extra_include_files %}
-include "{{ file }}";
-{% endfor %}
-{% if not bind_acls_view %}
+{% if bind_acls_view %}
 {% if bind_zones is defined %}
+{% for view in bind_acls %}
+view  "{{ view.name }}"  {
+
+    match-clients { {{ view.name }}; };
+    recursion yes;
+
+zone "." IN {
+        type hint;
+        file "/usr/share/dns/root.hints";
+};
+
+zone "localhost" IN {
+        type master;
+        file "/etc/bind/db.local";
+};
+
+zone "127.in-addr.arpa" IN {
+        type master;
+        file "/etc/bind/db.127";
+};
+
+zone "0.in-addr.arpa" IN {
+        type master;
+        file "/etc/bind/db.0";
+};
+
+zone "255.in-addr.arpa" IN {
+        type master;
+        file "/etc/bind/db.255";
+};
+
 {% for bind_zone in bind_zones %}
+{% if bind_zone.acl_name is not defined or bind_zone.acl_name == view.name  %}
 
 {% if bind_zone.create_forward_zones is not defined or bind_zone.create_forward_zones %}
 {# Start: set zone type  #}
@@ -131,7 +63,11 @@ include "{{ file }}";
 zone "{{ bind_zone.name }}" IN {
 {% if _type == 'primary' %}
   type master;
+  {% if bind_zone.acl_name is not defined %}
   file "{{ bind_zone_dir }}/{{ bind_zone.name }}";
+  {% else %}
+  file "{{ bind_zone_dir }}/{{ view.name }}/{{ bind_zone.name }}";
+  {% endif %}
   notify yes;
 {% if bind_zone.also_notify is defined %}
   also-notify  { {{ bind_zone.also_notify|join('; ') }}; };
@@ -144,7 +80,7 @@ zone "{{ bind_zone.name }}" IN {
 {% elif _type == 'secondary' %}
   type slave;
   masters { {{ bind_zone.primaries|join('; ') }}; };
-  file "{{ bind_secondary_dir }}/{{ bind_zone.name }}";
+  #file "{{ bind_secondary_dir }}/{{ bind_zone.name }}";
 {% elif _type == 'forward' %}
   type forward;
   forward only;
@@ -159,7 +95,7 @@ zone "{{ bind_zone.name }}" IN {
 zone "{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr.arpa" IN {
 {% if _type == 'primary' %}
   type master;
-  file "{{ bind_zone_dir }}/{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr.arpa";
+  file "{{ bind_zone_dir }}/{{ view.name }}/{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr.arpa";
   notify yes;
 {% if bind_zone.also_notify is defined %}
   also-notify  { {{ bind_zone.also_notify|join('; ') }}; };
@@ -172,7 +108,7 @@ zone "{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr
 {% elif _type == 'secondary' %}
   type slave;
   masters { {{ bind_zone.primaries|join('; ') }}; };
-  file "{{ bind_secondary_dir }}/{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr.arpa";
+  #file "{{ bind_secondary_dir }}/{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr.arpa";
 {% elif _type == 'forward' %}
   type forward;
   forward only;
@@ -189,7 +125,7 @@ zone "{{ ('.'.join(network.replace(network+'.','').split('.')[::-1])) }}.in-addr
 zone "{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)//2):] }}" IN {
 {% if _type == 'primary' %}
   type master;
-  file "{{ bind_zone_dir }}/{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)//2):-1] }}";
+  file "{{ bind_zone_dir }}/{{ view.name }}/{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)//2):-1] }}";
   notify yes;
 {% if bind_zone.also_notify is defined %}
   also-notify  { {{ bind_zone.also_notify|join('; ') }}; };
@@ -202,7 +138,7 @@ zone "{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)
 {% elif _type == 'secondary' %}
   type slave;
   masters { {{ bind_zone.primaries|join('; ') }}; };
-  file "{{ bind_secondary_dir }}/{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)//2):-1] }}";
+  #file "{{ bind_secondary_dir }}/{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)//2):-1] }}";
 {% elif _type == 'forward' %}
   type forward;
   forward only;
@@ -212,6 +148,9 @@ zone "{{ (network | ipaddr('revdns'))[-(9+(network|regex_replace('^.*/','')|int)
 {% endfor %}
 {% endif %}
 {% endif %}
+{% endif %}
+{% endfor %}
+};
 {% endfor %}
 {% endif %}
 {% endif %}

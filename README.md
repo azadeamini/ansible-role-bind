@@ -1,5 +1,3 @@
-# Ansible role BIND
-
 [![Actions Status](https://github.com/bertvv/ansible-role-bind/workflows/CI/badge.svg)](https://github.com/bertvv/ansible-role-bind/actions)
 
 An Ansible role for setting up ISC BIND as an **authoritative-only** DNS server for multiple domains. Specifically, the responsibilities of this role are to:
@@ -61,7 +59,7 @@ The packages `python-netaddr` (required for the [`ipaddr`](https://docs.ansible.
 | `bind_zone_dir`             | -                    | When defined, sets a custom absolute path to the server directory (for zone files, etc.) instead of the default.                     |
 | `bind_key_mapping`          | []                   | `Primary: Keyname` - mapping of TSIG keys to use for a specific primary                                                              |
 | `bind_zones`                | n/a                  | A list of mappings with zone definitions. See below this table for examples                                                          |
-| `- allow_update`            | `['none']`           | A list of hosts that are allowed to dynamically update this DNS zone.                                                                |
+| `- allow_update`            | `['none']`           | A list of hosts that are allowed to dynamically update this DNSbind_config_default_zone zone.                                                                |
 | `- also_notify`             | -                    | A list of servers that will receive a notification when the primary zone file is reloaded.                                           |
 | `- create_forward_zones`    | -                    | When initialized and set to `false`, creation of forward zones will be skipped (resulting in a reverse only zone)                    |
 | `- create_reverse_zones`    | -                    | When initialized and set to `false`, creation of reverse zones will be skipped (resulting in a forward only zone)                    |
@@ -88,6 +86,18 @@ The packages `python-netaddr` (required for the [`ipaddr`](https://docs.ansible.
 | `bind_zone_time_to_retry`   | `1H`                 | Time to retry field in the SOA record.                                                                                               |
 | `bind_zone_ttl`             | `1W`                 | Time to Live field in the SOA record.                                                                                                |
 | `bind_python_version`       | -                    | The python version that should be used for ansible. Depends on Distro, either `2` or `3`. Defaults to the OS standard                |
+
+##New  variable for ACL  per zone config 
+
+|dns_bind_install             | True/False           |Controls BIND installation
+|dns_bind_named_config        | True/False           |Controls named.conf configuration
+|backup_named_conf            | True/False
+|bind_acls_view               | True/False
+|bind_version                 |        -               |Specific version of BIND to install 
+|bind_config_default_zone     |        -               |Path to default zone configuration file
+|bind_owner                   |        -               |Owner of configuration files
+|bind_group                   |        -               |group  of configuration files
+
 
 † Best practice for an authoritative name server is to leave recursion turned off. However, [for some cases](http://www.zytrax.com/books/dns/ch7/queries.html#allow-query-cache) it may be necessary to have recursion turned on.
 
@@ -183,6 +193,66 @@ bind_zones:
       - "172.17"
 ```
 
+### Domain definitions  with ACL per zone
+
+  bind_zones:
+  # Example of a primary zone (hosts: and name_servers: ares defined)
+  - acl_name: t1-acl
+    create_reverse_zones: false  # Skip creation of reverse zones
+    primaries:
+      - 192.0.2.1                # Primary server(s) for this zone
+    name: mydomain.com
+    name_servers:
+      - pub01.mydomain.com.
+      - pub02.mydomain.com.
+    hosts:
+      - name: pub01
+        ip: 192.0.2.1
+        ipv6: 2001:db8::1
+        aliases:
+          - ns1
+      - name: pub02
+        ip: 192.0.2.2
+        ipv6: 2001:db8::2
+        
+        
+  - acl_name: t2-acl
+    create_reverse_zones: false  # Skip creation of reverse zones
+    primaries:
+      - 192.0.2.1                # Primary server(s) for this zone
+    name: mydomain.com
+    name_servers:
+      - pub01.mydomain.com.
+      - pub02.mydomain.com.
+    hosts:
+      - name: pub01
+        ip: 192.0.2.11
+        ipv6: 2001:db8::1
+        aliases:
+          - ns1
+      - name: pub02
+        ip: 192.0.2.12
+        ipv6: 2001:db8::2
+        aliases:
+          - ns2
+      - name: '@'                # Enables "http://mydomain.com/"
+        ip:
+          - 192.0.2.3            # Multiple IP addresses for a single host
+          - 192.0.2.4            #   results in DNS round robin
+        sshfp:                   # Secure shell fingerprint
+          - "3 1 1262006f9a45bb36b1aa14f45f354b694b77d7c3"
+          - "3 2 e5921564252fe10d2dbafeb243733ed8b1d165b8fa6d5a0e29198e5793f0623b"
+        ipv6:
+          - 2001:db8::2
+          - 2001:db8::3
+        aliases:
+          - www
+      - name: priv01             # This IP is in another subnet, will result in
+        ip: 10.0.0.1             #   multiple reverse zones
+ 
+
+
+
 ### Hosts
 
 Host names that this DNS server should resolve can be specified in `bind_zones.hosts` as a list of mappings with keys `name:`, `ip:`,  `aliases:` and `sshfp:`. Aliases can be CNAME (default) or DNAME records.
@@ -225,6 +295,7 @@ bind_zones:
       - 192.0.2.1
 ...
 # Secondary Server
+
 bind_zones:
   - name: mydomain.com
       type: secondary

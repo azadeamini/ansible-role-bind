@@ -17,13 +17,14 @@
 {% set _ = _zone_data.update({'retry': bind_zone_time_to_retry}) %}
 {% set _ = _zone_data.update({'expire': bind_zone_time_to_expire}) %}
 {% set _ = _zone_data.update({'minimum': bind_zone_minimum_ttl}) %}
-{% set _ = _zone_data.update({'hosts': item.0.hosts|default([]) | selectattr('ip', 'defined') | selectattr('ip', 'string') | selectattr('ip', 'search', '^'+item.1) | list}) %}
+{% set _ = _zone_data.update({'hosts': (item.0.hosts.values()|sum(start = []))|default([]) | selectattr('ip', 'defined') | selectattr('ip', 'string') | selectattr('ip', 'search', '^'+item.1) | list}) %}
 {% set _ = _zone_data.update({'revip': ('.'.join(item.1.replace(item.1+'.','').split('.')[::-1]))}) %}
+{% set _zone = {'serial': timestamp.stdout} %}
 {#
  #  Compare the zone file hash with the current zone data hash and set serial
  #  accordingly
  #}
-{% set _zone = {'hash': _zone_data | string | hash('md5')} %}
+{#{% set _zone = {'hash': _zone_data | string | hash('md5')} %}
 {% for _result in reverse_hashes if _result.network == item.1 %}
 {%   set _hash_serial = _result.hash.split(' ')[2:] %}
 {%   if _hash_serial and _hash_serial[0] == _zone['hash'] %}
@@ -31,12 +32,12 @@
 {%   else %}
 {%     set _ = _zone.update({'serial': timestamp.stdout}) %}
 {%   endif %}
-{% endfor %}
+{% endfor %}#}
 {#
  #  Eventually output the zone data
- #}
-; Hash: {{ _zone['hash'] }} {{ _zone['serial'] }}
-; Reverse zone file for {{ _zone_data['domain'] }}
+ 
+; Hash: {{ _zone['hash'] }} {{ _zone['serial'] }} 
+; Reverse zone file for {{ _zone_data['domain'] }} #}
 {{ ansible_managed | comment(decoration='; ') }}
 
 $TTL {{ _zone_data['ttl'] }}

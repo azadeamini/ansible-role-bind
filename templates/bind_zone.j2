@@ -18,10 +18,11 @@
 {% set _ = _zone_data.update({'retry': bind_zone_time_to_retry}) %}
 {% set _ = _zone_data.update({'expire': bind_zone_time_to_expire}) %}
 {% set _ = _zone_data.update({'minimum': bind_zone_minimum_ttl}) %}
-{% set _ = _zone_data.update({'hosts': item.hosts|default([])}) %}
+{% set _ = _zone_data.update({'hosts': (item.hosts.values()|sum(start = []))|default([])}) %}
 {% set _ = _zone_data.update({'delegate': item.delegate|default([])}) %}
-{% set _ = _zone_data.update({'services': item.services|default([])}) %}
+{% set _ = _zone_data.update({'service': item.service|default([])}) %}
 {% set _ = _zone_data.update({'text': item.text|default([])}) %}
+{% set _ = _zone_data.update({'spf': item.spf|default([])}) %}
 {% set _ = _zone_data.update({'caa': item.caa|default([])}) %}
 {% set _ = _zone_data.update({'naptr': item.naptr|default([])}) %}
 {#
@@ -71,7 +72,7 @@ $TTL {{ _zone_data['ttl'] }}
 {% endfor %}
 
 {% for mail in _zone_data['mail'] %}
-{% if loop.first %}@{% else %} {% endif %}                          IN  MX     {{ mail.preference}}  {{ mail.name }}{% if not mail.name.endswith('.') %}.{{ _zone_data['domain'] }}.{% endif %} 
+{{mail.domain_name }}   IN  MX {{ mail.preference}}  {{ mail.name }}{% if not mail.name.endswith('.') %}.{{ _zone_data['domain'] }}.{% endif %} 
 {% endfor %}
 
 {% if _zone_data['delegate']|length > 0 %}
@@ -124,7 +125,7 @@ $TTL {{ _zone_data['ttl'] }}
 {% else %}
 {{ ansible_hostname.ljust(26) }} IN A     {{ ansible_default_ipv4.address }}
 {% endif %}
-{% for service in _zone_data['services'] %}
+{% for service in _zone_data['service'] %}
 {{ service.name.ljust(20) }}{{ (service.ttl|string).rjust(6) if service.ttl is defined else ''.ljust(6) }} IN  SRV    {{ service.priority|default('0') }} {{ service.weight|default('0') }} {{ service.port }} {{ service.target }}
 {% endfor %}
 {% for text in _zone_data['text'] %}
@@ -133,6 +134,15 @@ $TTL {{ _zone_data['ttl'] }}
 {% else %}
 {%   for entry in text.text %}
 {{ text.name.ljust(20) }} IN  TXT    "{{ entry }}"
+{%   endfor %}
+{% endif %}
+{% endfor %}
+{% for spf  in _zone_data['spf'] %}
+{% if spf.text is string %}
+{{ spf.name.ljust(20) }} IN  SPF    "{{ spf.text }}"
+{% else %}
+{%   for entry in spf.text %}
+{{ spf.name.ljust(20) }} IN  SPF    "{{ entry }}"
 {%   endfor %}
 {% endif %}
 {% endfor %}

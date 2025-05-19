@@ -20,12 +20,12 @@ platforms:
     docker_networks:
       - name: bind
         ipam_config:
-          - subnet: "10.11.0.0/16"
-            gateway: "10.11.0.254"
+          - subnet: 10.11.0.0/16
+            gateway: 10.11.0.254
     networks:
       - name: bind
-        ipv4_address: "10.11.0.4"
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest"
+        ipv4_address: 10.11.0.4
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -43,8 +43,8 @@ platforms:
       - dns
     networks:
       - name: bind
-        ipv4_address: "10.11.0.5"
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest"
+        ipv4_address: 10.11.0.5
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw

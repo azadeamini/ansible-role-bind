@@ -21,12 +21,12 @@ platforms:
     docker_networks:
       - name: bind
         ipam_config:
-          - subnet: "10.11.0.0/16"
-            gateway: "10.11.0.254"
+          - subnet: 10.11.0.0/16
+            gateway: 10.11.0.254
     networks:
       - name: bind
-        ipv4_address: "10.11.0.1"
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest"
+        ipv4_address: 10.11.0.1
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest
     # Command to execute when the container starts
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     # Volumes to mount within the container. Important to enable systemd
@@ -48,8 +48,8 @@ platforms:
     hostname: ns2
     networks:
       - name: bind
-        ipv4_address: "10.11.0.2"
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest"
+        ipv4_address: 10.11.0.2
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -65,8 +65,8 @@ platforms:
     hostname: ns3
     networks:
       - name: bind
-        ipv4_address: "10.11.0.3"
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest"
+        ipv4_address: 10.11.0.3
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-centos8}-ansible:latest
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -77,7 +77,6 @@ platforms:
     tty: true
     environment:
       container: docker
-
 
 provisioner:
   name: ansible

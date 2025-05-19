@@ -23,7 +23,7 @@
  #  Compare the zone file hash with the current zone data hash and set serial
  #  accordingly
  #}
-{% set _zone = {'hash': _zone_data | string | hash('md5')} %}
+{#{% set _zone = {'hash': _zone_data | string | hash('md5')} %}
 {% for _result in reverse_hashes_ipv6 if _result.network == item.1 %}
 {%   set _hash_serial = _result.hash.split(' ')[2:] %}
 {%   if _hash_serial and _hash_serial[0] == _zone['hash'] %}
@@ -31,7 +31,7 @@
 {%   else %}
 {%     set _ = _zone.update({'serial': timestamp.stdout}) %}
 {%   endif %}
-{% endfor %}
+{% endfor %}#}
 {#
  #  Eventually output the zone data
  #}
