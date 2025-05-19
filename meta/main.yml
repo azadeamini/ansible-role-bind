@@ -2,9 +2,7 @@
 galaxy_info:
   role_name: bind
   namespace: azadeamini
-  author:
-    - Maryam Mayabi
-    - Azade Amini
+  author: Maryam Mayabi, Azade Amini
   description: >
     Sets up ISC BIND as an authoritative DNS server for one or more domains
     (primary and/or secondary) with per-zone ACL support.
